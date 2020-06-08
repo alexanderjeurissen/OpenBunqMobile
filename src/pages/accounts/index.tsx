@@ -20,19 +20,19 @@ import {
 } from '@ionic/react';
 
 
-interface AccountItemProps {
-  accountType: string,
-  accountDetails: any
-}
+/* interface AccountItemProps { */
+/*   accountType: string, */
+/*   accountDetails: any */
+/* } */
 
-const AccountItem = ({ accountType, accountDetails }: AccountItemProps) => (
-  <IonItem>
-    <React.Fragment>
-      <IonIcon icon={ellipse} style={{color: `${accountDetails.setting.color}`}} />
-      {accountType}: {accountDetails.description}: {accountDetails.balance.value}
-    </React.Fragment>
-  </IonItem>
-)
+/* const AccountItem = ({ accountType, accountDetails }: AccountItemProps) => ( */
+/*   <IonItem> */
+/*     <React.Fragment> */
+/*       <IonIcon icon={ellipse} style={{color: `${accountDetails.setting.color}`}} /> */
+/*       {accountType}: {accountDetails.description}: {accountDetails.balance.value} */
+/*     </React.Fragment> */
+/*   </IonItem> */
+/* ) */
 
 
 const AccountsPage: React.FC = () => {
@@ -48,6 +48,7 @@ const AccountsPage: React.FC = () => {
 
     // get accounts list
     const accounts = await BunqClient.api.monetaryAccount.list(userInfo.id);
+
     setMonetaryAccounts(accounts);
   }, [BunqClient])
 
@@ -63,16 +64,16 @@ const AccountsPage: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Accounts</IonTitle>
-          </IonToolbar>
-        </IonHeader>
         <IonContent>
           <IonRefresher slot="fixed" onIonRefresh={fetchMonetaryAccounts}>
             <IonRefresherContent></IonRefresherContent>
           </IonRefresher>
         </IonContent>
+        <IonHeader collapse="condense">
+          <IonToolbar>
+            <IonTitle size="large">Accounts</IonTitle>
+          </IonToolbar>
+        </IonHeader>
         <IonList>
           {Object.values(monetaryAccounts).map((account: object) => {
             const accountType = Object.keys(account)[0];
@@ -80,7 +81,15 @@ const AccountsPage: React.FC = () => {
 
             if(accountDetails.status === "CANCELLED") return null;
 
-            return <AccountItem accountType={accountType} accountDetails={accountDetails} />;
+            return (
+          <IonItem>
+
+          <React.Fragment>
+            <IonIcon icon={ellipse} style={{color: `${accountDetails.setting.color}`}} />
+            {accountType}: {accountDetails.description}: {accountDetails.balance.value}
+          </React.Fragment>
+        </IonItem>
+            )
           })}
         </IonList>
       </IonContent>
