@@ -1,5 +1,5 @@
 import React from 'react';
-import { Redirect, Route } from 'react-router-dom';
+import { Route } from 'react-router-dom';
 import {
   IonApp,
   IonIcon,
@@ -9,11 +9,13 @@ import {
   IonTabButton,
   IonTabs
 } from '@ionic/react';
+
 import { IonReactRouter } from '@ionic/react-router';
-import { ellipse, square, triangle } from 'ionicons/icons';
-import Tab1 from './pages/Tab1';
-import Tab2 from './pages/Tab2';
-import Tab3 from './pages/Tab3';
+import { analytics, list, wallet } from 'ionicons/icons';
+import AccountsPage from './pages/accounts/index';
+import EventsPage from './pages/events/index';
+import InsightsPage from './pages/insights/index';
+import LoginPage from './pages/login/index';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -33,34 +35,48 @@ import '@ionic/react/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
+import './theme/shared.css';
 
-const App: React.FC = () => (
-  <IonApp>
-    <IonReactRouter>
-      <IonTabs>
-        <IonRouterOutlet>
-          <Route path="/tab1" component={Tab1} exact={true} />
-          <Route path="/tab2" component={Tab2} exact={true} />
-          <Route path="/tab3" component={Tab3} />
-          <Route path="/" render={() => <Redirect to="/tab1" />} exact={true} />
-        </IonRouterOutlet>
-        <IonTabBar slot="bottom">
-          <IonTabButton tab="tab1" href="/tab1">
-            <IonIcon icon={triangle} />
-            <IonLabel>Tab 1</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="tab2" href="/tab2">
-            <IonIcon icon={ellipse} />
-            <IonLabel>Tab 2</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="tab3" href="/tab3">
-            <IonIcon icon={square} />
-            <IonLabel>Tab 3</IonLabel>
-          </IonTabButton>
-        </IonTabBar>
-      </IonTabs>
-    </IonReactRouter>
-  </IonApp>
-);
+import BunqJSClient from '@bunq-community/bunq-js-client';
+import CapacitorStore from './helpers/CapacitorStore';
+import BunqContext from './helpers/bunq_context';
+
+import ProtectedRoute from './components/protected_route';
+
+const App: React.FC = () => {
+  const bunqClient = new BunqJSClient(CapacitorStore());
+
+  return (
+    <IonApp>
+      <BunqContext.Provider value={bunqClient}>
+        <IonReactRouter>
+          <IonTabs>
+            <IonRouterOutlet>
+              <Route path="/login" component={LoginPage} />
+              <ProtectedRoute path="/accounts" component={AccountsPage}  />
+              <ProtectedRoute path="/events" component={EventsPage}  />
+              <ProtectedRoute path="/insights" component={InsightsPage}  />
+              <ProtectedRoute path="/" component={AccountsPage} />
+            </IonRouterOutlet>
+            <IonTabBar slot="bottom">
+              <IonTabButton tab="accounts" href="/accounts">
+                <IonIcon icon={wallet} />
+                <IonLabel>Accounts</IonLabel>
+              </IonTabButton>
+              <IonTabButton tab="events" href="/events">
+                <IonIcon icon={list} />
+                <IonLabel>Events</IonLabel>
+              </IonTabButton>
+              <IonTabButton tab="insights" href="/insights">
+                <IonIcon icon={analytics} />
+                <IonLabel>Insights</IonLabel>
+              </IonTabButton>
+            </IonTabBar>
+          </IonTabs>
+        </IonReactRouter>
+      </BunqContext.Provider>
+    </IonApp>
+  );
+};
 
 export default App;
