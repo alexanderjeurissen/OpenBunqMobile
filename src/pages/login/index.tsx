@@ -34,10 +34,10 @@ import {
 
 import { Plugins, PluginResultError } from '@capacitor/core';
 
-import 'capacitor-secure-storage-plugin';
 import { derivePassword }  from "../../helpers/encryption";
 
 import BunqContext from "../../helpers/bunq_context";
+import StorageContext from "../../helpers/storage_context";
 import BunqErrorHandler from "../../helpers/bunq_error_handler";
 
 import './login.css';
@@ -65,8 +65,8 @@ const unlockWithFaceId = () => {
 
 /* } */
 const LoginPage: React.FC = ({ history }: any) => {
-  const bunqClient = useContext(BunqContext);
-  const { SecureStoragePlugin } = Plugins;
+  const BunqClient = useContext(BunqContext);
+  const Storage = useContext(StorageContext);
 
   const [showLoading, setShowLoading] = useState(false);
   const [apiKey , setApiKey ] = useState('');
@@ -77,39 +77,32 @@ const LoginPage: React.FC = ({ history }: any) => {
   // and set them in state
   useEffect(() => {
     const fetchConfigFromStorage = async () => {
-      const { value: storedApiKey } = await SecureStoragePlugin.get({ key: 'BUNQ_API_KEY' }).catch(() => ({value: ''}));
-      setApiKey(storedApiKey);
+      const storedApiKey = await Storage.get('BUNQ_API_KEY')
+      setApiKey(storedApiKey || '');
 
-      const { value: storedDeviceName } = await SecureStoragePlugin.get({ key: 'BUNQ_DEVICE_NAME' }).catch(() => ({value: ''}))
-      setDeviceName(storedDeviceName);
-
-      SecureStoragePlugin.remove({ key: 'BUNQ_ENCRYPTION_KEY' })
+      const storedDeviceName = await Storage.get('BUNQ_DEVICE_NAME')
+      setDeviceName(storedDeviceName || '');
     }
 
     fetchConfigFromStorage();
-  }, [SecureStoragePlugin])
+  }, [Storage])
 
-  const createOrRegenerateEncryptionKey = useCallback(() => (
+  const createOrRegenerateEncryptionKey = useCallback(() => {
     // NOTE: try to fetch the encryption IV from secure storage.
     // If it does not exist, generate a new encryption key using a new IV
     // and the provided password
-    SecureStoragePlugin.get({ key: 'BUNQ_ENCRYPTION_IV' }).then(({ value }: any) => {
-      const derivedInfo = derivePassword(password, 32, value);
+    const encryptionIv = Storage.get('BUNQ_ENCRYPTION_IV')
 
-      return derivedInfo.key;
-    }).catch(() => {
-      // NOTE: IV is not present yet let's generate one
-      const derivedInfo = derivePassword(password, 32, false);
+    const derivedInfo = derivePassword(password, 32, (encryptionIv === null) ? false : encryptionIv);
 
-      SecureStoragePlugin.set({ key: 'BUNQ_ENCRYPTION_IV', value: derivedInfo.iv})
+    Storage.set('BUNQ_ENCRYPTION_IV', derivedInfo.iv)
 
-      return derivedInfo.key;
-    })
-  ), [SecureStoragePlugin, password]);
+    return derivedInfo.key;
+  }, [Storage, password]);
 
   const setup = useCallback(async () => {
     // load and refresh bunq client
-    await bunqClient
+    await BunqClient
       .run(apiKey, ['*'], 'PRODUCTION', await createOrRegenerateEncryptionKey())
       .catch((exception: any) => {
         BunqErrorHandler(exception)
@@ -117,30 +110,30 @@ const LoginPage: React.FC = ({ history }: any) => {
       });
 
     // disable keep-alive since the server will stay online without the need for a constant active session
-    bunqClient.setKeepAlive(true);
+    BunqClient.setKeepAlive(true);
 
     // create/re-use a system installation
-    await bunqClient.install();
+    await BunqClient.install();
 
     // create/re-use a device installation
-    await bunqClient.registerDevice(deviceName);
+    await BunqClient.registerDevice(deviceName);
 
     // create/re-use a bunq session installation
-    await bunqClient.registerSession();
+    await BunqClient.registerSession();
 
     history.push('/accounts');
     setShowLoading(false);
-  }, [bunqClient, createOrRegenerateEncryptionKey, apiKey, deviceName])
+  }, [BunqClient, createOrRegenerateEncryptionKey, apiKey, deviceName])
 
   const setBunqApiKey = useCallback((value: string) => {
-    SecureStoragePlugin.set({ key: 'BUNQ_API_KEY', value });
+    Storage.set('BUNQ_API_KEY', value);
     setApiKey(value);
-  }, [SecureStoragePlugin])
+  }, [Storage])
 
   const setBunqDeviceName = useCallback((value: string) => {
-    SecureStoragePlugin.set({ key: 'BUNQ_DEVICE_NAME', value });
+    Storage.set('BUNQ_DEVICE_NAME', value);
     setDeviceName(value);
-  }, [SecureStoragePlugin])
+  }, [Storage])
 
   return (
     <IonPage className='login-page'>

@@ -40,40 +40,44 @@ import './theme/shared.css';
 import BunqJSClient from '@bunq-community/bunq-js-client';
 import CapacitorStore from './helpers/CapacitorStore';
 import BunqContext from './helpers/bunq_context';
+import StorageContext from './helpers/storage_context';
 
 import ProtectedRoute from './components/protected_route';
 
 const App: React.FC = () => {
-  const bunqClient = new BunqJSClient(CapacitorStore());
+  const storage = CapacitorStore();
+  const bunqClient = new BunqJSClient(storage);
 
   return (
     <IonApp>
       <BunqContext.Provider value={bunqClient}>
-        <IonReactRouter>
-          <IonTabs>
-            <IonRouterOutlet>
-              <Route path="/login" component={LoginPage} />
-              <ProtectedRoute path="/accounts" component={AccountsPage}  />
-              <ProtectedRoute path="/events" component={EventsPage}  />
-              <ProtectedRoute path="/insights" component={InsightsPage}  />
-              <ProtectedRoute path="/" component={AccountsPage} />
-            </IonRouterOutlet>
-            <IonTabBar slot="bottom">
-              <IonTabButton tab="accounts" href="/accounts">
-                <IonIcon icon={wallet} />
-                <IonLabel>Accounts</IonLabel>
-              </IonTabButton>
-              <IonTabButton tab="events" href="/events">
-                <IonIcon icon={list} />
-                <IonLabel>Events</IonLabel>
-              </IonTabButton>
-              <IonTabButton tab="insights" href="/insights">
-                <IonIcon icon={analytics} />
-                <IonLabel>Insights</IonLabel>
-              </IonTabButton>
-            </IonTabBar>
-          </IonTabs>
-        </IonReactRouter>
+        <StorageContext.Provider value={storage}>
+          <IonReactRouter>
+            <IonTabs>
+              <IonRouterOutlet>
+                <Route path="/login" component={LoginPage} />
+                <ProtectedRoute path="/accounts" component={AccountsPage}  />
+                <ProtectedRoute path="/events" component={EventsPage}  />
+                <ProtectedRoute path="/insights" component={InsightsPage}  />
+                <ProtectedRoute path="/" component={AccountsPage} />
+              </IonRouterOutlet>
+              <IonTabBar slot="bottom">
+                <IonTabButton tab="accounts" href="/accounts">
+                  <IonIcon icon={wallet} />
+                  <IonLabel>Accounts</IonLabel>
+                </IonTabButton>
+                <IonTabButton tab="events" href="/events">
+                  <IonIcon icon={list} />
+                  <IonLabel>Events</IonLabel>
+                </IonTabButton>
+                <IonTabButton tab="insights" href="/insights">
+                  <IonIcon icon={analytics} />
+                  <IonLabel>Insights</IonLabel>
+                </IonTabButton>
+              </IonTabBar>
+            </IonTabs>
+          </IonReactRouter>
+        </StorageContext.Provider>
       </BunqContext.Provider>
     </IonApp>
   );

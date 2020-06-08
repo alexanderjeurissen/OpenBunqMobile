@@ -9,12 +9,18 @@ interface StorageInterface {
   remove(key: string): Promise<any> | void;
 }
 
+interface StorageValue {
+  value: any
+}
+
 export default (): StorageInterface => {
   return {
-    get: async (key: string): Promise<any> => {
-      const { value } =  SecureStoragePlugin.get({ key }).catch(() => ({ value: null}))
-      return value;
-    },
+    get: async (key: string): Promise<any> => (
+      SecureStoragePlugin
+        .get({ key })
+        .then(({ value }: StorageValue) => value)
+        .catch(() => null)
+    ),
     set: async (key: string, value: any): Promise<any> => await SecureStoragePlugin.set({ key, value }),
     remove: async (key: string): Promise<any> => await SecureStoragePlugin.remove({ key })
   };
