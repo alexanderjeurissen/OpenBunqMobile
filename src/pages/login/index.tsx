@@ -13,7 +13,7 @@ import {
   IonIcon,
 } from '@ionic/react';
 
-import { download } from 'ionicons/icons';
+import { trashOutline } from 'ionicons/icons';
 
 import {
   IonList,
@@ -39,6 +39,8 @@ import { derivePassword }  from "../../helpers/encryption";
 import BunqContext from "../../helpers/bunq_context";
 import StorageContext from "../../helpers/storage_context";
 import BunqErrorHandler from "../../helpers/bunq_error_handler";
+import ToggleTabBarVisibility from "../../helpers/tab_bar";
+import Flex from "../../components/flex";
 
 import './login.css';
 
@@ -85,13 +87,14 @@ const LoginPage: React.FC = ({ history }: any) => {
     }
 
     fetchConfigFromStorage();
+    ToggleTabBarVisibility();
   }, [Storage])
 
-  const createOrRegenerateEncryptionKey = useCallback(() => {
+  const createOrRegenerateEncryptionKey = useCallback(async () => {
     // NOTE: try to fetch the encryption IV from secure storage.
     // If it does not exist, generate a new encryption key using a new IV
     // and the provided password
-    const encryptionIv = Storage.get('BUNQ_ENCRYPTION_IV')
+    const encryptionIv = await Storage.get('BUNQ_ENCRYPTION_IV')
 
     const derivedInfo = derivePassword(password, 32, (encryptionIv === null) ? false : encryptionIv);
 
@@ -121,6 +124,7 @@ const LoginPage: React.FC = ({ history }: any) => {
     // create/re-use a bunq session installation
     await BunqClient.registerSession();
 
+    ToggleTabBarVisibility();
     history.push('/accounts');
     setShowLoading(false);
   }, [BunqClient, createOrRegenerateEncryptionKey, apiKey, deviceName])
@@ -134,6 +138,12 @@ const LoginPage: React.FC = ({ history }: any) => {
     Storage.set('BUNQ_DEVICE_NAME', value);
     setDeviceName(value);
   }, [Storage])
+
+  const clearStorage = useCallback(() => {
+    Storage.clear();
+    setApiKey('');
+    setDeviceName('');
+  }, [Storage]);
 
   return (
     <IonPage className='login-page'>
@@ -186,10 +196,12 @@ const LoginPage: React.FC = ({ history }: any) => {
                 </IonList>
 
                 <div className="ion-padding">
-                  <IonButton expand="block" type="submit" class="ion-no-margin" onClick={e => {
-                    setShowLoading(true);
-                    setup()
-                  }}>Login</IonButton>
+                  <Flex width='100%' justifyContent="space-between" alignItems="center">
+                    <Flex flexGrow={1} marginRight="8px">
+                    <IonButton expand="block" type="submit" class="ion-no-margin" style={{width: '100%'}}onClick={e => setup()}>Login</IonButton>
+                    </Flex>
+                    {apiKey && (<IonButton color='danger' expand="block" type="submit" class="ion-no-margin" onClick={e => clearStorage()}><IonIcon icon={trashOutline} /></IonButton>)}
+                  </Flex>
                 </div>
               </IonCard>
             </IonCol>

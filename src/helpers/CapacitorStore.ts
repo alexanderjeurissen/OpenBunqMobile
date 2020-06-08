@@ -7,6 +7,7 @@ interface StorageInterface {
   get(key: string): Promise<any> | any;
   set(key: string, value: any): Promise<any> | void;
   remove(key: string): Promise<any> | void;
+  clear(): Promise<any> | void;
 }
 
 interface StorageValue {
@@ -22,6 +23,7 @@ export default (): StorageInterface => {
         .catch(() => null)
     ),
     set: async (key: string, value: any): Promise<any> => await SecureStoragePlugin.set({ key, value }),
-    remove: async (key: string): Promise<any> => await SecureStoragePlugin.remove({ key })
+    remove: async (key: string): Promise<any> => await SecureStoragePlugin.remove({ key }),
+    clear: async (): Promise<any> => await SecureStoragePlugin.clear()
   };
 };

@@ -1,5 +1,9 @@
-.login-page ion-grid {
-  background: url(/assets/bunq_colors.svg);
+/* .login-page ion-grid { */
+/*   background: url(/assets/bunq_colors.svg); */
+/* } */
+
+.login-page ion-content {
+  --background: url(/assets/bunq_colors.svg);
 }
 
 /* ion-tab-bar { */
