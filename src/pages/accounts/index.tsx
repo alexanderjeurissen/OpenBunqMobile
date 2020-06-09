@@ -4,7 +4,8 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar,  IonIcon} from '@
 import { IonRefresher, IonRefresherContent } from '@ionic/react';
 import { RefresherEventDetail } from '@ionic/core';
 
-import BunqContext from "../../helpers/bunq_context";
+import { BunqContext } from "../../providers/bunq_provider";
+import Flex from "../../components/flex";
 
 import {
   ellipse,
@@ -39,12 +40,13 @@ const AccountsPage: React.FC = () => {
   const BunqClient = useContext(BunqContext);
   const [monetaryAccounts, setMonetaryAccounts ] = useState([]);
 
-  const fetchMonetaryAccounts = useCallback(async (event: CustomEvent<RefresherEventDetail> | null) => {
+
+  const fetchMonetaryAccounts = useCallback(async () => {
     // get user info connected to this account
     const users = await BunqClient.getUsers(true);
 
     // get the direct user object
-    const userInfo = users[Object.keys(users)[0]];
+    const userInfo =  users[Object.keys(users)[0]];
 
     // get accounts list
     const accounts = await BunqClient.api.monetaryAccount.list(userInfo.id);
@@ -52,8 +54,14 @@ const AccountsPage: React.FC = () => {
     setMonetaryAccounts(accounts);
   }, [BunqClient])
 
+  const refreshAccounts = useCallback(async (event: CustomEvent<RefresherEventDetail>) => {
+    await fetchMonetaryAccounts();
+
+    event.detail.complete();
+  }, [fetchMonetaryAccounts])
+
   useEffect(() =>  {
-    fetchMonetaryAccounts(null)
+    fetchMonetaryAccounts()
   }, [fetchMonetaryAccounts])
 
   return (
@@ -64,34 +72,33 @@ const AccountsPage: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <IonContent>
-          <IonRefresher slot="fixed" onIonRefresh={fetchMonetaryAccounts}>
-            <IonRefresherContent></IonRefresherContent>
+        {/* <IonHeader collapse="condense"> */}
+        {/*   <IonToolbar> */}
+        {/*     <IonTitle size="large">Accounts</IonTitle> */}
+        {/*   </IonToolbar> */}
+        {/* </IonHeader> */}
+          <IonRefresher slot="fixed" onIonRefresh={refreshAccounts}>
+            <IonRefresherContent>
+            </IonRefresherContent>
           </IonRefresher>
-        </IonContent>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Accounts</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <IonList>
-          {Object.values(monetaryAccounts).map((account: object) => {
-            const accountType = Object.keys(account)[0];
-            const accountDetails = Object.values(account)[0];
+              <IonList>
+                {Object.values(monetaryAccounts).map((account: object) => {
+                  const accountType = Object.keys(account)[0];
+                  const accountDetails = Object.values(account)[0];
 
-            if(accountDetails.status === "CANCELLED") return null;
+                  if(accountDetails.status === "CANCELLED") return null;
 
-            return (
-          <IonItem>
+                  return (
+                <IonItem>
+                  <Flex alignItems="center" padding="3px">
+                    <Flex marginRight="8px"><IonIcon icon={ellipse} style={{color: `${accountDetails.setting.color}`}} /></Flex>
+                    <Flex>{accountType}: {accountDetails.description}: {accountDetails.balance.value}</Flex>
+                  </Flex>
+                </IonItem>
+                  )
+                })}
+              </IonList>
 
-          <React.Fragment>
-            <IonIcon icon={ellipse} style={{color: `${accountDetails.setting.color}`}} />
-            {accountType}: {accountDetails.description}: {accountDetails.balance.value}
-          </React.Fragment>
-        </IonItem>
-            )
-          })}
-        </IonList>
       </IonContent>
     </IonPage>
   );

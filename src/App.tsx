@@ -39,19 +39,19 @@ import './theme/shared.css';
 
 import BunqJSClient from '@bunq-community/bunq-js-client';
 import CapacitorStore from './helpers/CapacitorStore';
-import BunqContext from './helpers/bunq_context';
-import StorageContext from './helpers/storage_context';
+import BunqProvider from './providers/bunq_provider';
+import StorageProvider from './providers/storage_provider';
 
 import ProtectedRoute from './components/protected_route';
+import XMLHttpRequestMonkeyPatch from './helpers/xml_http_request_monkey_patch.js';
 
 const App: React.FC = () => {
-  const storage = CapacitorStore();
-  const bunqClient = new BunqJSClient(storage);
+  XMLHttpRequestMonkeyPatch();
 
   return (
     <IonApp>
-      <BunqContext.Provider value={bunqClient}>
-        <StorageContext.Provider value={storage}>
+      <BunqProvider>
+        <StorageProvider>
           <IonReactRouter>
             <IonTabs>
               <IonRouterOutlet>
@@ -77,8 +77,8 @@ const App: React.FC = () => {
               </IonTabBar>
             </IonTabs>
           </IonReactRouter>
-        </StorageContext.Provider>
-      </BunqContext.Provider>
+        </StorageProvider>
+      </BunqProvider>
     </IonApp>
   );
 };

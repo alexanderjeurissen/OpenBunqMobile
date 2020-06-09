@@ -1109,9 +1109,10 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
-"@bunq-community/bunq-js-client@ssh://git@github.com:alexanderjeurissen/bunqJSClient.git":
+"@bunq-community/bunq-js-client@^1.1.2":
   version "1.1.2"
-  resolved "ssh://git@github.com:alexanderjeurissen/bunqJSClient.git#6d3b64dd882e8eef62851c601634f7600c04d3e8"
+  resolved "https://registry.yarnpkg.com/@bunq-community/bunq-js-client/-/bunq-js-client-1.1.2.tgz#e0b99248a9c0e2d0b547236f7f8bff94a2dd3c94"
+  integrity sha512-DxC43592AWH8TwXfdMlVXMDaqN2jNBDlcawg+x7fyxMz9zihlpNajxnGoRh7W9smh99HmsU/UAE+LtaIUbXpVw==
   dependencies:
     awaiting "^3.0.0"
     axios "0.18.1"
@@ -2532,6 +2533,14 @@ aws4@^1.8.0:
   resolved "https://registry.yarnpkg.com/aws4/-/aws4-1.10.0.tgz#a17b3a8ea811060e74d47d306122400ad4497ae2"
   integrity sha512-3YDiu347mtVtjpyV3u5kVqQLP242c06zwDOgpeRnybmXlYYsLbtTrUBUm8i8srONt+FWobl5aibnU1030PeeuA==
 
+axios-cache-adapter@^2.5.0:
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/axios-cache-adapter/-/axios-cache-adapter-2.5.0.tgz#e68be61e8c1cd7f31e4e7cfcbfd0435404ae67ef"
+  integrity sha512-YcMPdMoqmSLoZx7A5YD/PdYGuX6/Y9M2tHBhaIXvXrPeGgNnbW7nb3+uArWlT53WGHLfclnu2voMmS7jGXVg6A==
+  dependencies:
+    cache-control-esm "1.0.0"
+    lodash "^4.17.11"
+
 axios@0.18.1:
   version "0.18.1"
   resolved "https://registry.yarnpkg.com/axios/-/axios-0.18.1.tgz#ff3f0de2e7b5d180e757ad98000f1081b87bcea3"
@@ -3049,6 +3058,11 @@ cache-base@^1.0.1:
     to-object-path "^0.3.0"
     union-value "^1.0.0"
     unset-value "^1.0.0"
+
+cache-control-esm@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/cache-control-esm/-/cache-control-esm-1.0.0.tgz#417647ecf1837a5e74155f55d5a4ae32a84e2581"
+  integrity sha512-Fa3UV4+eIk4EOih8FTV6EEsVKO0W5XWtNs6FC3InTfVz+EjurjPfDXY5wZDo/lxjDxg5RjNcurLyxEJBcEUx9g==
 
 call-me-maybe@^1.0.1:
   version "1.0.1"

@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
-    "@bunq-community/bunq-js-client": "ssh://git@github.com:alexanderjeurissen/bunqJSClient.git",
+    "@bunq-community/bunq-js-client": "^1.1.2",
     "@capacitor/core": "2.1.2",
     "@capacitor/ios": "^2.1.2",
     "@ionic-native/http": "^5.26.0",
@@ -24,6 +24,7 @@
     "@types/styled-system": "^5.1.9",
     "@types/styled-system__should-forward-prop": "^5.1.1",
     "apollo-link": "^1.2.14",
+    "axios-cache-adapter": "^2.5.0",
     "capacitor-face-id": "^2.0.1",
     "capacitor-secure-storage-plugin": "^0.4.0",
     "com.darktalker.cordova.screenshot": "^0.1.6",

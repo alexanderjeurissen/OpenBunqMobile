@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 
 import { Redirect, Route } from 'react-router-dom';
-import BunqContext from '../helpers/bunq_context';
+import { BunqContext } from '../providers/bunq_provider';
 
 interface ProtectedRouteProps {
   path: string,

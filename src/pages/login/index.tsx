@@ -36,8 +36,8 @@ import { Plugins, PluginResultError } from '@capacitor/core';
 
 import { derivePassword }  from "../../helpers/encryption";
 
-import BunqContext from "../../helpers/bunq_context";
-import StorageContext from "../../helpers/storage_context";
+import { BunqContext } from "../../providers/bunq_provider";
+import { StorageContext } from "../../providers/storage_provider";
 import BunqErrorHandler from "../../helpers/bunq_error_handler";
 import ToggleTabBarVisibility from "../../helpers/tab_bar";
 import Flex from "../../components/flex";
