@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Route } from 'react-router-dom';
 import {
   IonApp,
@@ -37,16 +37,43 @@ import '@ionic/react/css/display.css';
 import './theme/variables.css';
 import './theme/shared.css';
 
-import BunqJSClient from '@bunq-community/bunq-js-client';
-import CapacitorStore from './helpers/CapacitorStore';
 import BunqProvider from './providers/bunq_provider';
 import StorageProvider from './providers/storage_provider';
 
 import ProtectedRoute from './components/protected_route';
 import XMLHttpRequestMonkeyPatch from './helpers/xml_http_request_monkey_patch.js';
+import axios from 'axios';
+import { setupCache } from 'axios-cache-adapter'
+import CapacitorStore from './helpers/CapacitorStore';
+
+interface AxiosCacheStore {
+  clear: () => Promise<any>;
+}
+interface AxiosCacheConfig {
+  store: AxiosCacheStore;
+  uuid: string;
+}
 
 const App: React.FC = () => {
-  XMLHttpRequestMonkeyPatch();
+  useEffect(() => {
+    XMLHttpRequestMonkeyPatch();
+
+    // Create `axios-cache-adapter` instance
+    const cache = setupCache({
+      maxAge: 1 * 60 * 1000,
+      invalidate: async (config: AxiosCacheConfig, request) => {
+        if (request.clearCacheEntry) {
+          const shouldPurgeCache = await CapacitorStore().get('AXIOS_INVALIDATE_CACHE');
+          if(shouldPurgeCache) {
+            await config.store.clear();
+            await CapacitorStore().remove('AXIOS_INVALIDATE_CACHE');
+          }
+        }
+      }
+    })
+
+    axios.defaults.adapter = cache.adapter;
+  },[])
 
   return (
     <IonApp>

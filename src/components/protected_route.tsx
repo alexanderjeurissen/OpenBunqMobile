@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ component, ...props }) => {
-  const bunqClient = useContext(BunqContext);
+  const { BunqClient } = useContext(BunqContext)!;
 
   const Component = component;
 
@@ -17,7 +17,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ component, ...props }) 
     <Route
       {...props}
       render={({ location }) => {
-        if(!bunqClient.Session.sessionId) {
+        if(!BunqClient.Session.sessionId) {
           return <Redirect to='/login'/>
         }
 

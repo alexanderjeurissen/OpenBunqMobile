@@ -67,7 +67,7 @@ const unlockWithFaceId = () => {
 
 /* } */
 const LoginPage: React.FC = ({ history }: any) => {
-  const BunqClient = useContext(BunqContext);
+  const { BunqClient } = useContext(BunqContext)!;
   const Storage = useContext(StorageContext);
 
   const [showLoading, setShowLoading] = useState(false);
@@ -127,7 +127,7 @@ const LoginPage: React.FC = ({ history }: any) => {
     ToggleTabBarVisibility();
     history.push('/accounts');
     setShowLoading(false);
-  }, [BunqClient, createOrRegenerateEncryptionKey, apiKey, deviceName])
+  }, [BunqClient, createOrRegenerateEncryptionKey, apiKey, deviceName, history])
 
   const setBunqApiKey = useCallback((value: string) => {
     Storage.set('BUNQ_API_KEY', value);
@@ -141,6 +141,7 @@ const LoginPage: React.FC = ({ history }: any) => {
 
   const clearStorage = useCallback(() => {
     Storage.clear();
+    Storage.set('AXIOS_INVALIDATE_CACHE', true);
     setApiKey('');
     setDeviceName('');
   }, [Storage]);
@@ -161,48 +162,53 @@ const LoginPage: React.FC = ({ history }: any) => {
           <IonRow>
             <IonCol size='12'>
               <IonCard style={{ alignSelf: 'center'}}>
-                <IonList>
-                  <IonItem>
-                    <IonLabel position="floating">Api key</IonLabel>
-                    <IonInput
-                      name='api_key'
-                      type='text'
-                      onIonChange={e => setBunqApiKey((e.target as HTMLInputElement).value)}
-                      value={apiKey}
-                      required
-                    />
-                  </IonItem>
-                  <IonItem>
-                    <IonLabel position="floating">Device name</IonLabel>
-                    <IonInput
-                      name='device_name'
-                      type='text'
-                      onIonChange={e => setBunqDeviceName((e.target as HTMLInputElement).value)}
-                      value={deviceName}
-                      required
-                    />
-                  </IonItem>
-                  <IonItem>
-                    <IonLabel position="floating">Password</IonLabel>
-                    <IonInput
-                      name='password'
-                      type='password'
-                      onIonChange={e => setPassword((e.target as HTMLInputElement).value)}
-                      value={password}
-                      required
-                    />
-                  </IonItem>
+                <form onSubmit={e => {
+                    e.preventDefault();
+                    setShowLoading(true);
+                    setup();
+                }}>
+                  <IonList>
+                    <IonItem>
+                      <IonLabel position="floating">Api key</IonLabel>
+                      <IonInput
+                        name='api_key'
+                        type='text'
+                        onIonChange={e => setBunqApiKey((e.target as HTMLInputElement).value)}
+                        value={apiKey}
+                        required
+                      />
+                    </IonItem>
+                    <IonItem>
+                      <IonLabel position="floating">Device name</IonLabel>
+                      <IonInput
+                        name='device_name'
+                        type='text'
+                        onIonChange={e => setBunqDeviceName((e.target as HTMLInputElement).value)}
+                        value={deviceName}
+                        required
+                      />
+                    </IonItem>
+                    <IonItem>
+                      <IonLabel position="floating">Password</IonLabel>
+                      <IonInput
+                        name='password'
+                        type='password'
+                        onIonChange={e => setPassword((e.target as HTMLInputElement).value)}
+                        value={password}
+                        required
+                      />
+                    </IonItem>
+                  </IonList>
 
-                </IonList>
-
-                <div className="ion-padding">
-                  <Flex width='100%' justifyContent="space-between" alignItems="center">
-                    <Flex flexGrow={1} marginRight="8px">
-                    <IonButton expand="block" type="submit" class="ion-no-margin" style={{width: '100%'}}onClick={e => setup()}>Login</IonButton>
+                  <div className="ion-padding">
+                    <Flex width='100%' justifyContent="space-between" alignItems="center">
+                      <Flex flexGrow={1} marginRight="8px">
+                      <IonButton expand="block" type="submit" class="ion-no-margin" style={{width: '100%'}}>Login</IonButton>
+                      </Flex>
+                      {apiKey && (<IonButton color='danger' expand="block" type="reset" class="ion-no-margin" onClick={e => clearStorage()}><IonIcon icon={trashOutline} /></IonButton>)}
                     </Flex>
-                    {apiKey && (<IonButton color='danger' expand="block" type="submit" class="ion-no-margin" onClick={e => clearStorage()}><IonIcon icon={trashOutline} /></IonButton>)}
-                  </Flex>
-                </div>
+                  </div>
+                </form>
               </IonCard>
             </IonCol>
           </IonRow>
