@@ -4,9 +4,6 @@ import RefreshQueryTrigger from '../atoms/refresh_query_trigger';
 import { GetRecoilValue, selector, DefaultValue } from 'recoil';
 import ObjType from '../types/obj_type';
 
-
-interface RecoilGet { get: GetRecoilValue }
-
 const KEY: string = 'monetaryAccountsQuery';
 export default selector({
   key: KEY,
@@ -14,7 +11,9 @@ export default selector({
     get(RefreshQueryTrigger(KEY));
     const bunqClient: BunqClientInterface = get(BunqClient);
 
-    const userId = get(CurrentUserIdState);
+    const userId: number | null = get(CurrentUserIdState);
+
+    if(!userId) throw Error(`${KEY} query requires authentication`);
 
     // get accounts list
     const accounts: ObjType[] = await bunqClient.api.monetaryAccount.list(userId);

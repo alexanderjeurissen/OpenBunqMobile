@@ -24,7 +24,6 @@ import {
 import { IonLoading } from '@ionic/react';
 
 import { Plugins, PluginResultError } from '@capacitor/core';
-import { derivePassword }  from "../../helpers/encryption";
 
 import BunqErrorHandler from "../../helpers/bunq_error_handler";
 import ToggleTabBarVisibility from "../../helpers/tab_bar";
@@ -34,7 +33,8 @@ import ObjType from '../../types/obj_type';
 
 import CurrentUserIdState from '../../atoms/current_user_id_state';
 import BunqClient, { BunqClientInterface } from '../../atoms/bunq_client';
-import { useSetRecoilState, useRecoilValue, useRecoilState } from 'recoil';
+import DerivedPasswordSelector from '../../selectors/derived_password_selector';
+import { useRecoilValue, useRecoilValueLoadable } from 'recoil';
 import useSecureStorageItem from '../../hooks/use_secure_storage_item';
 
 import './setup.css';
@@ -48,7 +48,7 @@ const SetupForm: React.FC = () => {
   const [ password, setPassword ] = useSecureStorageItem('BUNQ_PASSWORD', '');
   const [ showLoading, setShowLoading ] = useState(false);
   const [ encryptionIV, setEncryptionIV ] = useSecureStorageItem('BUNQ_ENCRYPTION_IV', null);
-  const setCurrentUserID = useSetRecoilState(CurrentUserIdState);
+  const derivedPassword: ObjType = useRecoilValueLoadable(DerivedPasswordSelector);
 
   let history = useHistory();
 
@@ -56,15 +56,18 @@ const SetupForm: React.FC = () => {
     // NOTE: try to fetch the encryption IV from secure storage.
     // If it does not exist, generate a new encryption key using a new IV
     // and the provided password
-    const derivedInfo = derivePassword(password as string, 32, (encryptionIV === null) ? false : encryptionIV);
+    if(derivedPassword.state !== 'hasValue') throw Error('could not create encryption key');
+    const { iv, key } = derivedPassword.contents;
 
-    setEncryptionIV(derivedInfo.iv)
+    setEncryptionIV(iv)
+    await bunqClient.changeEncryptionKey(key)
 
-    return derivedInfo.key;
-  }, [password, encryptionIV]);
+    return key;
+  }, [ password, derivedPassword ]);
 
   const setupBunqClient = useCallback(async () => {
     setShowLoading(true);
+
     // load and refresh bunq client
     await bunqClient
       .run((apiKey as string), ['*'], 'PRODUCTION', await createOrRegenerateEncryptionKey())
@@ -76,24 +79,22 @@ const SetupForm: React.FC = () => {
     bunqClient.setKeepAlive(false);
 
     // create/re-use a system installation
-    await bunqClient.install();
+    await bunqClient.install().catch(e => { throw e; });
 
     // create/re-use a device installation
-    await bunqClient.registerDevice((deviceName as string));
+    await bunqClient.registerDevice((deviceName as string)).catch(e => { throw e; });
 
     // create/re-use a bunq session installation
-    await bunqClient.registerSession();
+    await bunqClient.registerSession().catch(e => { throw e; });
 
-    if(!bunqClient.Session.sessionId) return;
-    const userInfo = Object.values(bunqClient.Session.userInfo)[0] as ObjType;
-    setCurrentUserID(userInfo.id);
+    if(!bunqClient.Session.sessionId) throw Error('Error: could not create session');
 
     await setupFaceId();
 
     ToggleTabBarVisibility();
     history.push('/accounts');
     setShowLoading(false);
-  }, [BunqClient, createOrRegenerateEncryptionKey, apiKey, deviceName, history, setCurrentUserID])
+  }, [BunqClient, createOrRegenerateEncryptionKey, apiKey, deviceName, history ])
 
   const setupFaceId = async () => {
     const { FaceId } = Plugins;

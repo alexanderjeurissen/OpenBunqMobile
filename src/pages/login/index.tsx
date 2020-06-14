@@ -15,9 +15,7 @@ import { Plugins, PluginResultError } from '@capacitor/core';
 import Flex from "react-flex-primitive";
 
 import BunqErrorHandler from "../../helpers/bunq_error_handler";
-import { derivePassword }  from "../../helpers/encryption";
 import ToggleTabBarVisibility from "../../helpers/tab_bar";
-import Storage from '../../helpers/capacitor_store';
 
 import ObjType from '../../types/obj_type';
 
@@ -25,7 +23,8 @@ import useSecureStorageItem from '../../hooks/use_secure_storage_item';
 
 import BunqClient, { BunqClientInterface } from '../../atoms/bunq_client';
 import CurrentUserIdState from '../../atoms/current_user_id_state';
-import { useSetRecoilState, useRecoilValue, useRecoilState } from 'recoil';
+import DerivedPasswordSelector from '../../selectors/derived_password_selector';
+import { useSetRecoilState, useRecoilValue, useRecoilCallback } from 'recoil';
 
 import './login.css';
 
@@ -36,7 +35,6 @@ const LoginPage: React.FC = () => {
   const [ deviceName ] = useSecureStorageItem('BUNQ_DEVICE_NAME', 'Open Bunq Mobile');
   const [ faceIdEnabled, setFaceIdEnabled ] = useSecureStorageItem('BUNQ_FACE_ID_ENABLED', 'false');
   const [ password, setPassword ] = useSecureStorageItem('BUNQ_PASSWORD', '');
-  const [ encryptionIV, setEncryptionIV ] = useSecureStorageItem('BUNQ_ENCRYPTION_IV', null);
   const [ showLoading, setShowLoading ] = useState(true);
   const setCurrentUserID = useSetRecoilState(CurrentUserIdState);
 
@@ -47,20 +45,15 @@ const LoginPage: React.FC = () => {
     ToggleTabBarVisibility();
   }, [])
 
-  const regenerateEncryptionKey = useCallback(async () => {
-    // NOTE: try to fetch the encryption IV from secure storage.
-    // If it does not exist, generate a new encryption key using a new IV
-    // and the provided password
-    const derivedInfo = derivePassword(password as string, 32, (encryptionIV === null) ? false : encryptionIV);
-
-    return derivedInfo.key;
-  }, [password, encryptionIV]);
-
-  const initializeBunqClient = useCallback(async () => {
+  const initializeBunqClient = useRecoilCallback(async ({getPromise}) => {
     setShowLoading(true);
+    console.log('we are here');
+    const derivedPassword: ObjType = await getPromise(DerivedPasswordSelector);
+    console.log('wow');
+    console.info(JSON.stringify(derivedPassword));
     // load and refresh bunq client
     await bunqClient
-      .run((apiKey as string), ['*'], 'PRODUCTION', await regenerateEncryptionKey())
+      .run((apiKey as string), ['*'], 'PRODUCTION', derivedPassword.key)
       .catch((exception: any) => {
         BunqErrorHandler(exception)
       });
@@ -69,22 +62,20 @@ const LoginPage: React.FC = () => {
     bunqClient.setKeepAlive(false);
 
     // create/re-use a system installation
-    await bunqClient.install();
+    await bunqClient.install().catch(e => { throw e; });
 
     // create/re-use a device installation
-    await bunqClient.registerDevice((deviceName as string));
+    await bunqClient.registerDevice((deviceName as string)).catch(e => { throw e; });
 
     // create/re-use a bunq session installation
-    await bunqClient.registerSession();
+    await bunqClient.registerSession().catch(e => { throw e; });
 
-    if(!bunqClient.Session.sessionId) return;
-    const userInfo = Object.values(bunqClient.Session.userInfo)[0] as ObjType;
-    setCurrentUserID(userInfo.id);
+    if(!bunqClient.Session.sessionId) throw Error('Error: could not create session');
 
     ToggleTabBarVisibility();
     history.push('/accounts');
     setShowLoading(false);
-  }, [ BunqClient, regenerateEncryptionKey, apiKey, deviceName, history ])
+  }, [ bunqClient, apiKey, deviceName, history ])
 
   const unlockWithFaceId = async () => {
     const { FaceId } = Plugins;
@@ -100,15 +91,15 @@ const LoginPage: React.FC = () => {
 
     // NOTE: Biometrics available, try to authenticated
     FaceId.auth().then(() => {
-      console.log('authenticated');
+      console.info('authenticated');
       setFaceIdEnabled('true');
       initializeBunqClient();
-    }).catch((error: PluginResultError) => {
-      // handle rejection errors
-      console.error(error.message);
+    }).catch(async (error: PluginResultError) => {
+      console.error(error);
       setPassword('');
       setShowLoading(false);
       history.push('/setup');
+      throw error;
     });
   };
 

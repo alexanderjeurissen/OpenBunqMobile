@@ -3164,10 +3164,9 @@ caniuse-lite@^1.0.0, caniuse-lite@^1.0.30000981, caniuse-lite@^1.0.30001035, can
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001078.tgz#e1b6e2ae327b6a1ec11f65ec7a0dde1e7093074c"
   integrity sha512-sF12qXe9VMm32IEf/+NDvmTpwJaaU7N1igpiH2FdI4DyABJSsOqG3ZAcFvszLkoLoo1y6VJLMYivukUAxaMASw==
 
-capacitor-face-id@^2.0.1:
+"capacitor-face-id@ssh://git@github.com:danielsogl/capacitor-face-id.git":
   version "2.0.1"
-  resolved "https://registry.yarnpkg.com/capacitor-face-id/-/capacitor-face-id-2.0.1.tgz#39182f00d0177e473c0217c53d770ba305d8efb0"
-  integrity sha512-SMcsVPXKkG575FswsiKmr0Nq9R2vqBZHMZMcovMfybG3EtruC0mpFGJCd/uC2bE3DvnTN9NY6zoW/bSmxMzQTA==
+  resolved "ssh://git@github.com:danielsogl/capacitor-face-id.git#29d3d5d679b712a19defd74a4fe8fe4291831a23"
   dependencies:
     "@capacitor/core" latest
 
@@ -11133,6 +11132,11 @@ url@^0.11.0:
   dependencies:
     punycode "1.3.2"
     querystring "0.2.0"
+
+use-debounce@^3.4.2:
+  version "3.4.2"
+  resolved "https://registry.yarnpkg.com/use-debounce/-/use-debounce-3.4.2.tgz#f4333cca59504244b916159600427bf977ec4c46"
+  integrity sha512-rW44wZaFPh3XiwUzGBA0JRuklpbfKO/szU/5CYD2Q/erLmCem63lJ650p3a+NJE6S+g0rulKtBOfa/3rw/GN+Q==
 
 use@^3.1.0:
   version "3.1.1"

@@ -1,48 +1,39 @@
 const forge = require("node-forge");
 
-/**
- * Example on how to generate a random AES key and re-use it afterwards
- * @param password
- * @param iv
- * @returns {{key: the|*, iv: the|*}}
- */
-export const derivePassword = (password: string, keySize: number = 32, iv: boolean = false) => {
-    // generate a random iv
-    let passwordIv;
-    if (iv) {
-        // turn existing iv into bytes
-        passwordIv = forge.util.hexToBytes(iv);
+// NOTE: taken from BunqJSClient to ensure compatibility with BunqClient#setup
+// https://github.com/bunqCommunity/bunqJSClient/blob/master/src/Crypto/Pbkdf2.ts
+export default async (
+    password: string,
+    iv: boolean | string = false,
+    iterations: number = 10000
+) => {
+    if (iv === false) {
+        // no iv given, create a new random one
+        iv = forge.random.getBytesSync(128);
     } else {
-        // generate a new random iv
-        passwordIv = forge.random.getBytesSync(keySize);
+        // get bytes from the hex iv
+        iv = forge.util.hexToBytes(iv);
     }
 
-    // amount of pbkdf2 iterations,
-    const iterations = 300000;
+    // asynchronously derive a key from the password
+    const derivedKey = await new Promise((resolve, reject) => {
+        // derive a 32-byte key from the password
+        forge.pkcs5.pbkdf2(password, iv, iterations, 16, (errorMessage: string, derivedKey: string) => {
+            /* istanbul ignore if - can't manually trigger an error with this lib */
+            if (errorMessage) {
+                reject(errorMessage);
+            } else {
+                resolve(derivedKey);
+            }
+        });
+    });
 
-    // derive a 16 bit key from the password and iv
-    const derivedBytes = forge.pkcs5.pbkdf2(password, passwordIv, iterations, keySize);
-
-    // turn derivedBytes into a readable string
-    const encryptionKey = forge.util.bytesToHex(derivedBytes);
-
-    // turn passwordIv into a readable string
-    const encryptionIv = forge.util.bytesToHex(passwordIv);
+    // encode the bytes as hex
+    const hexKey = forge.util.bytesToHex(derivedKey);
+    const hexSalt = forge.util.bytesToHex(iv);
 
     return {
-        key: encryptionKey,
-        iv: encryptionIv
+        key: hexKey,
+        iv: hexSalt
     };
-};
-
-/**
- * Basic function just to generate a random AES key
- * @param keySize
- */
-export const generateRandomKey = (keySize: number) => {
-    // random bytes
-    const key = forge.random.getBytesSync(keySize);
-
-    // straight to hex and return it
-    return forge.util.bytesToHex(key);
 };

@@ -29,7 +29,7 @@
     "@types/styled-system__should-forward-prop": "^5.1.1",
     "apollo-link": "^1.2.14",
     "axios-cache-adapter": "^2.5.0",
-    "capacitor-face-id": "^2.0.1",
+    "capacitor-face-id": "ssh://git@github.com:danielsogl/capacitor-face-id.git",
     "capacitor-secure-storage-plugin": "^0.4.0",
     "com.darktalker.cordova.screenshot": "^0.1.6",
     "cordova-plugin-advanced-http": "^2.5.1",
@@ -50,7 +50,8 @@
     "recoil": "^0.0.8",
     "styled-components": "^5.1.1",
     "styled-system": "^5.1.5",
-    "typescript": "3.8.3"
+    "typescript": "3.8.3",
+    "use-debounce": "^3.4.2"
   },
   "scripts": {
     "start": "react-scripts start",
