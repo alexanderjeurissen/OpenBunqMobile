@@ -21,7 +21,7 @@ import './accounts.css';
 
 
 import MonetaryAccountsFilterState from '../../atoms/monetary_accounts_filter_state';
-import MonetaryAccountsState from '../../atoms/monetary_accounts_state';
+import MonetaryAccountsQuery from '../../selectors/monetary_accounts_query';
 import FilteredMonetaryAccountsSelector from '../../selectors/filtered_monetary_accounts_selector';
 
 import { useRecoilValue, useRecoilState, useResetRecoilState } from 'recoil';
@@ -41,40 +41,47 @@ const AccountList = () => {
   )
 }
 const AccountsPage: React.FC = () => {
-  const resetMonetaryAccountState = useResetRecoilState(MonetaryAccountsState);
+  const resetMonetaryAccountState = useResetRecoilState(MonetaryAccountsQuery);
   const [ filterState, setFilterState ] = useRecoilState(MonetaryAccountsFilterState);
 
   const segments = [{ value: 'ACTIVE', label: 'Active'}, { value: 'CANCELLED', label: 'inactive' }];
   const [searchFocus, setSearchFocus] = useState(false);
 
-  const refreshAccounts = useCallback(async (event: CustomEvent<RefresherEventDetail>) => {
-    await resetMonetaryAccountState();
+  const refreshAccounts = async (event: CustomEvent<RefresherEventDetail>) => {
+    resetMonetaryAccountState();
     event.detail.complete();
-  }, [resetMonetaryAccountState])
+  };
 
   return (
     <IonPage>
-      <IonHeader collapse="condense">
-        <IonToolbar hidden={searchFocus}>
-          <IonTitle size="large">Accounts</IonTitle>
-        </IonToolbar>
+      <IonHeader>
         <IonToolbar>
-          <IonSearchbar
-            value={''}
-            onFocus={e => setSearchFocus(true)}
-            onIonChange={e => console.log(e.detail.value!)}
-          />
-          <IonSegment value={filterState.status} onIonChange={e => setFilterState({...filterState, status: e.detail.value || 'ACTIVE' })}>
-            { segments.map(({ value, label}) => (
-            <IonSegmentButton value={value}>
-              <IonLabel>{label}</IonLabel>
-            </IonSegmentButton>
-            ))}
-          </IonSegment>
+          <IonTitle>Events</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent start-y="55" fullscreen force-overscroll={true}>
-        <IonRefresher onIonRefresh={refreshAccounts} pullFactor={0.5} pullMin={100} pullMax={200}>
+        <IonHeader collapse="condense">
+          <IonToolbar hidden={searchFocus}>
+            <IonTitle size="large">Accounts</IonTitle>
+          </IonToolbar>
+          <IonToolbar>
+            <IonSearchbar
+              value={''}
+              onFocus={e => setSearchFocus(true)}
+              onIonChange={e => console.log(e.detail.value!)}
+            />
+          </IonToolbar>
+          <IonToolbar>
+            <IonSegment value={filterState.status} onIonChange={e => setFilterState({...filterState, status: e.detail.value || 'ACTIVE' })}>
+              { segments.map(({ value, label}) => (
+              <IonSegmentButton value={value}>
+                <IonLabel>{label}</IonLabel>
+              </IonSegmentButton>
+              ))}
+            </IonSegment>
+          </IonToolbar>
+        </IonHeader>
+        <IonRefresher slot="fixed" onIonRefresh={refreshAccounts} pullFactor={0.5} pullMin={100} pullMax={200}>
           <IonRefresherContent>
           </IonRefresherContent>
         </IonRefresher>

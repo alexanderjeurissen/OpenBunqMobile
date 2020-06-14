@@ -21,7 +21,7 @@ import Storage from '../../helpers/capacitor_store';
 
 import ObjType from '../../types/obj_type';
 
-import useSecureStorageItemValue from '../../hooks/use_secure_storage_item';
+import useSecureStorageItem from '../../hooks/use_secure_storage_item';
 
 import BunqClient, { BunqClientInterface } from '../../atoms/bunq_client';
 import CurrentUserIdState from '../../atoms/current_user_id_state';
@@ -32,10 +32,10 @@ import './login.css';
 
 const LoginPage: React.FC = () => {
   const bunqClient: BunqClientInterface = useRecoilValue(BunqClient);
-  const [ apiKey ] = useSecureStorageItemValue('BUNQ_API_KEY', '');
-  const [ deviceName ] = useSecureStorageItemValue('BUNQ_DEVICE_NAME', 'Open Bunq Mobile');
-  const [ faceIdEnabled ] = useSecureStorageItemValue('BUNQ_FACE_ID_ENABLED', 'false');
-  const [ password ] = useSecureStorageItemValue('BUNQ_PASSWORD', '');
+  const [ apiKey ] = useSecureStorageItem('BUNQ_API_KEY', '');
+  const [ deviceName ] = useSecureStorageItem('BUNQ_DEVICE_NAME', 'Open Bunq Mobile');
+  const [ faceIdEnabled, setFaceIdEnabled ] = useSecureStorageItem('BUNQ_FACE_ID_ENABLED', 'false');
+  const [ password, setPassword ] = useSecureStorageItem('BUNQ_PASSWORD', '');
   const [ showLoading, setShowLoading ] = useState(true);
   const setCurrentUserID = useSetRecoilState(CurrentUserIdState);
 
@@ -46,15 +46,13 @@ const LoginPage: React.FC = () => {
     ToggleTabBarVisibility();
   }, [])
 
-  const createOrRegenerateEncryptionKey = useCallback(async () => {
+  const regenerateEncryptionKey = useCallback(async () => {
     // NOTE: try to fetch the encryption IV from secure storage.
     // If it does not exist, generate a new encryption key using a new IV
     // and the provided password
     const encryptionIv = await Storage.get('BUNQ_ENCRYPTION_IV')
 
     const derivedInfo = derivePassword(password as string, 32, (encryptionIv === null) ? false : encryptionIv);
-
-    Storage.set('BUNQ_ENCRYPTION_IV', derivedInfo.iv)
 
     return derivedInfo.key;
   }, [password]);
@@ -63,7 +61,7 @@ const LoginPage: React.FC = () => {
     setShowLoading(true);
     // load and refresh bunq client
     await bunqClient
-      .run((apiKey as string), ['*'], 'PRODUCTION', await createOrRegenerateEncryptionKey())
+      .run((apiKey as string), ['*'], 'PRODUCTION', await regenerateEncryptionKey())
       .catch((exception: any) => {
         BunqErrorHandler(exception)
         throw exception;
@@ -88,38 +86,47 @@ const LoginPage: React.FC = () => {
     ToggleTabBarVisibility();
     history.push('/accounts');
     setShowLoading(false);
-  }, [BunqClient, createOrRegenerateEncryptionKey, apiKey, deviceName, history, setCurrentUserID])
+  }, [BunqClient, regenerateEncryptionKey, apiKey, deviceName, history, setCurrentUserID])
 
-  const unlockWithFaceId = () => {
+  const unlockWithFaceId = async () => {
     const { FaceId } = Plugins;
 
-    // check if device supports Face ID or Touch ID
-    FaceId.isAvailable().then((checkResult: any) => {
-      if(checkResult.value) {
-        FaceId.auth().then((event: any, nice: any) => {
-          console.log('authenticated');
-          initializeBunqClient();
-        }).catch((error: PluginResultError) => {
-          // handle rejection errors
-          console.error(error.message);
-          setShowLoading(false);
-          history.push('/setup');
-        });
-      } else {
-        console.error('fallback ??');
-        // use custom fallback authentication here
-      }
+    // NOTE: Biometrics not available
+    const isAvailable = await FaceId.isAvailable();
+
+    if(!isAvailable) {
+      setPassword('');
+      setFaceIdEnabled('false')
+      setTimeout(unlockWithFaceId, 500);
+      return
+    }
+
+    // NOTE: Biometrics available, try to authenticated
+    FaceId.auth().then(() => {
+      console.log('authenticated');
+      setFaceIdEnabled('true');
+      initializeBunqClient();
+    }).catch((error: PluginResultError) => {
+      // handle rejection errors
+      console.error(error.message);
+      setPassword('');
+      setShowLoading(false);
+      history.push('/setup');
     });
   };
 
   useEffect(() => {
-    if(apiKey !== '' && faceIdEnabled === 'true') {
-      unlockWithFaceId();
-    } else {
-      setShowLoading(false);
-      history.push('/setup');
+    const login = async () => {
+      if(apiKey !== '' && password !== '' && faceIdEnabled === 'true') {
+        await unlockWithFaceId();
+      } else {
+        setShowLoading(false);
+        history.push('/setup');
+      }
     }
-  }, [apiKey, faceIdEnabled])
+
+    login();
+  }, [apiKey, faceIdEnabled, password])
 
   return (
     <IonPage className='login-page'>

@@ -104,7 +104,10 @@ const SetupForm: React.FC = () => {
     // NOTE: Biometrics not available
     const isAvailable = await FaceId.isAvailable();
 
-    if(!isAvailable) setFaceIdEnabled('false');
+    if(!isAvailable) {
+      setFaceIdEnabled('false');
+      return
+    }
 
     // NOTE: Biometrics available, try to authenticated
     FaceId.auth().then((event: any, nice: any) => {
