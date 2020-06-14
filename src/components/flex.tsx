@@ -1,5 +1,4 @@
-import styled, { StyledFunction } from "styled-components";
-import React from "react";
+import styled from "styled-components";
 import { layout, flexbox, space, compose } from "styled-system";
 import shouldForwardProp from "@styled-system/should-forward-prop";
 
@@ -69,7 +68,6 @@ interface FlexProps {
   width?: string | number
 }
 
-/* const flex: StyledFunction<FlexProps & React.HTMLProps<HTMLInputElement>> = styled.div; */
 const Flex = styled.div.withConfig<FlexProps>({ shouldForwardProp })(
   {
     display: 'flex',
@@ -78,5 +76,7 @@ const Flex = styled.div.withConfig<FlexProps>({ shouldForwardProp })(
   },
   compose(layout, flexbox, space)
 );
+
+Flex.displayName = 'Flex';
 
 export default Flex;

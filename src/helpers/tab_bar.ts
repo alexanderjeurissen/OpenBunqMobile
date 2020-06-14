@@ -1,8 +1,9 @@
+import ObjType from '../types/obj_type';
+
 export default () => {
   let tabBar = document.querySelectorAll('ion-tab-bar')[0];
 
-  type objType = {[key: string]: string};
-  const toggle: objType = {
+  const toggle: ObjType = {
     '': 'none',
     'none': 'flex',
     'flex': 'none'

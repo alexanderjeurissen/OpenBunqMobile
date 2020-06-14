@@ -2,10 +2,8 @@ import React, { useContext } from 'react';
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar,IonButton } from '@ionic/react';
 import ExploreContainer from '../../components/ExploreContainer';
 import './events.css';
-import { BunqContext } from "../../providers/bunq_provider";
 
 const EventsPage: React.FC = () => {
-  const bunqClient = useContext(BunqContext);
 
   return (
     <IonPage>

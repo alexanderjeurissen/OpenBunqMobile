@@ -1,5 +1,5 @@
-import React, { useState, useContext, useEffect, useCallback } from 'react';
-import { IonLoading } from '@ionic/react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useHistory } from "react-router-dom";
 import {
   IonContent,
   IonHeader,
@@ -8,87 +8,43 @@ import {
   IonToolbar,
 } from '@ionic/react';
 
-import {
-  IonCard,
-  IonIcon,
-} from '@ionic/react';
-
-import { trashOutline } from 'ionicons/icons';
-
-import {
-  IonList,
-  IonItem,
-} from '@ionic/react';
-
-import {
-  IonGrid,
-  IonRow,
-  IonCol
-} from '@ionic/react';
-
-import {
-  IonButton,
-  IonInput,
-  IonLabel
-} from '@ionic/react';
+import { IonLoading } from '@ionic/react';
 
 import { Plugins, PluginResultError } from '@capacitor/core';
 
-import { derivePassword }  from "../../helpers/encryption";
-
-import { BunqContext } from "../../providers/bunq_provider";
-import { StorageContext } from "../../providers/storage_provider";
-import BunqErrorHandler from "../../helpers/bunq_error_handler";
-import ToggleTabBarVisibility from "../../helpers/tab_bar";
 import Flex from "../../components/flex";
+
+import BunqErrorHandler from "../../helpers/bunq_error_handler";
+import { derivePassword }  from "../../helpers/encryption";
+import ToggleTabBarVisibility from "../../helpers/tab_bar";
+import Storage from '../../helpers/capacitor_store';
+
+import ObjType from '../../types/obj_type';
+
+import useSecureStorageItemValue from '../../hooks/use_secure_storage_item';
+
+import BunqClient, { BunqClientInterface } from '../../atoms/bunq_client';
+import CurrentUserIdState from '../../atoms/current_user_id_state';
+import { useSetRecoilState, useRecoilValue, useRecoilState } from 'recoil';
 
 import './login.css';
 
-const unlockWithFaceId = () => {
-  const { FaceId } = Plugins;
 
-  // check if device supports Face ID or Touch ID
-  FaceId.isAvailable().then((checkResult: any) => {
-    if(checkResult.value) {
-      FaceId.auth().then(() => {
-        console.log('authenticated');
-      }).catch((error: PluginResultError) => {
-        // handle rejection errors
-        console.error(error.message);
-      });
-    } else {
-      console.error('fallback ??');
-      // use custom fallback authentication here
-    }
-  });
-};
+const LoginPage: React.FC = () => {
+  const bunqClient: BunqClientInterface = useRecoilValue(BunqClient);
+  const [ apiKey ] = useSecureStorageItemValue('BUNQ_API_KEY', '');
+  const [ deviceName ] = useSecureStorageItemValue('BUNQ_DEVICE_NAME', 'Open Bunq Mobile');
+  const [ faceIdEnabled ] = useSecureStorageItemValue('BUNQ_FACE_ID_ENABLED', 'false');
+  const [ password ] = useSecureStorageItemValue('BUNQ_PASSWORD', '');
+  const [ showLoading, setShowLoading ] = useState(true);
+  const setCurrentUserID = useSetRecoilState(CurrentUserIdState);
 
-/* const SignUp: React.FC = () => { */
-
-/* } */
-const LoginPage: React.FC = ({ history }: any) => {
-  const { BunqClient } = useContext(BunqContext)!;
-  const Storage = useContext(StorageContext);
-
-  const [showLoading, setShowLoading] = useState(false);
-  const [apiKey , setApiKey ] = useState('');
-  const [deviceName , setDeviceName ] = useState('');
-  const [ password, setPassword ] = useState('');
+  let history = useHistory();
 
   // NOTE: fetch stored config parameters
-  // and set them in state
   useEffect(() => {
-    const fetchConfigFromStorage = async () => {
-      const storedApiKey = await Storage.get('BUNQ_API_KEY')
-      setApiKey(storedApiKey || '');
-
-      const storedDeviceName = await Storage.get('BUNQ_DEVICE_NAME')
-      setDeviceName(storedDeviceName || '');
-    }
-
-    fetchConfigFromStorage();
     ToggleTabBarVisibility();
-  }, [Storage])
+  }, [])
 
   const createOrRegenerateEncryptionKey = useCallback(async () => {
     // NOTE: try to fetch the encryption IV from secure storage.
@@ -96,123 +52,85 @@ const LoginPage: React.FC = ({ history }: any) => {
     // and the provided password
     const encryptionIv = await Storage.get('BUNQ_ENCRYPTION_IV')
 
-    const derivedInfo = derivePassword(password, 32, (encryptionIv === null) ? false : encryptionIv);
+    const derivedInfo = derivePassword(password as string, 32, (encryptionIv === null) ? false : encryptionIv);
 
     Storage.set('BUNQ_ENCRYPTION_IV', derivedInfo.iv)
 
     return derivedInfo.key;
-  }, [Storage, password]);
+  }, [password]);
 
-  const setup = useCallback(async () => {
+  const initializeBunqClient = useCallback(async () => {
+    setShowLoading(true);
     // load and refresh bunq client
-    await BunqClient
-      .run(apiKey, ['*'], 'PRODUCTION', await createOrRegenerateEncryptionKey())
+    await bunqClient
+      .run((apiKey as string), ['*'], 'PRODUCTION', await createOrRegenerateEncryptionKey())
       .catch((exception: any) => {
         BunqErrorHandler(exception)
         throw exception;
       });
 
     // disable keep-alive since the server will stay online without the need for a constant active session
-    BunqClient.setKeepAlive(true);
+    bunqClient.setKeepAlive(false);
 
     // create/re-use a system installation
-    await BunqClient.install();
+    await bunqClient.install();
 
     // create/re-use a device installation
-    await BunqClient.registerDevice(deviceName);
+    await bunqClient.registerDevice((deviceName as string));
 
     // create/re-use a bunq session installation
-    await BunqClient.registerSession();
+    await bunqClient.registerSession();
+
+    if(!bunqClient.Session.sessionId) return;
+    const userInfo = Object.values(bunqClient.Session.userInfo)[0] as ObjType;
+    setCurrentUserID(userInfo.id);
 
     ToggleTabBarVisibility();
     history.push('/accounts');
     setShowLoading(false);
-  }, [BunqClient, createOrRegenerateEncryptionKey, apiKey, deviceName, history])
+  }, [BunqClient, createOrRegenerateEncryptionKey, apiKey, deviceName, history, setCurrentUserID])
 
-  const setBunqApiKey = useCallback((value: string) => {
-    Storage.set('BUNQ_API_KEY', value);
-    setApiKey(value);
-  }, [Storage])
+  const unlockWithFaceId = () => {
+    const { FaceId } = Plugins;
 
-  const setBunqDeviceName = useCallback((value: string) => {
-    Storage.set('BUNQ_DEVICE_NAME', value);
-    setDeviceName(value);
-  }, [Storage])
+    // check if device supports Face ID or Touch ID
+    FaceId.isAvailable().then((checkResult: any) => {
+      if(checkResult.value) {
+        FaceId.auth().then((event: any, nice: any) => {
+          console.log('authenticated');
+          initializeBunqClient();
+        }).catch((error: PluginResultError) => {
+          // handle rejection errors
+          console.error(error.message);
+          setShowLoading(false);
+          history.push('/setup');
+        });
+      } else {
+        console.error('fallback ??');
+        // use custom fallback authentication here
+      }
+    });
+  };
 
-  const clearStorage = useCallback(() => {
-    Storage.clear();
-    Storage.set('AXIOS_INVALIDATE_CACHE', true);
-    setApiKey('');
-    setDeviceName('');
-  }, [Storage]);
+  useEffect(() => {
+    if(apiKey !== '' && faceIdEnabled === 'true') {
+      unlockWithFaceId();
+    } else {
+      setShowLoading(false);
+      history.push('/setup');
+    }
+  }, [apiKey, faceIdEnabled])
 
   return (
     <IonPage className='login-page'>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Login with Bunq</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent>
-        <IonLoading
-          isOpen={showLoading}
-          message={'Please wait...'}
-        />
-        <IonGrid>
-          <IonRow>
-            <IonCol size='12'>
-              <IonCard style={{ alignSelf: 'center'}}>
-                <form onSubmit={e => {
-                    e.preventDefault();
-                    setShowLoading(true);
-                    setup();
-                }}>
-                  <IonList>
-                    <IonItem>
-                      <IonLabel position="floating">Api key</IonLabel>
-                      <IonInput
-                        name='api_key'
-                        type='text'
-                        onIonChange={e => setBunqApiKey((e.target as HTMLInputElement).value)}
-                        value={apiKey}
-                        required
-                      />
-                    </IonItem>
-                    <IonItem>
-                      <IonLabel position="floating">Device name</IonLabel>
-                      <IonInput
-                        name='device_name'
-                        type='text'
-                        onIonChange={e => setBunqDeviceName((e.target as HTMLInputElement).value)}
-                        value={deviceName}
-                        required
-                      />
-                    </IonItem>
-                    <IonItem>
-                      <IonLabel position="floating">Password</IonLabel>
-                      <IonInput
-                        name='password'
-                        type='password'
-                        onIonChange={e => setPassword((e.target as HTMLInputElement).value)}
-                        value={password}
-                        required
-                      />
-                    </IonItem>
-                  </IonList>
-
-                  <div className="ion-padding">
-                    <Flex width='100%' justifyContent="space-between" alignItems="center">
-                      <Flex flexGrow={1} marginRight="8px">
-                      <IonButton expand="block" type="submit" class="ion-no-margin" style={{width: '100%'}}>Login</IonButton>
-                      </Flex>
-                      {apiKey && (<IonButton color='danger' expand="block" type="reset" class="ion-no-margin" onClick={e => clearStorage()}><IonIcon icon={trashOutline} /></IonButton>)}
-                    </Flex>
-                  </div>
-                </form>
-              </IonCard>
-            </IonCol>
-          </IonRow>
-        </IonGrid>
+      <IonContent slot="fixed" fullscreen scroll-y="false">
+        <Flex minHeight='100vh' justifyContent="center" alignItems="flex-start" flexGrow={1}>
+          <IonLoading isOpen={showLoading} message={'Looking for existing credentials...'} />
+        </Flex>
       </IonContent>
     </IonPage>
   );
