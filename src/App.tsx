@@ -1,19 +1,3 @@
-import React, { Suspense, lazy } from 'react';
-import {
-  IonApp,
-  IonIcon,
-  IonLabel,
-  IonRouterOutlet,
-  IonTabBar,
-  IonTabButton,
-  IonTabs
-} from '@ionic/react';
-
-import { IonLoading } from '@ionic/react';
-
-import { IonReactRouter } from '@ionic/react-router';
-import { analytics, list, wallet } from 'ionicons/icons';
-
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
 
@@ -34,11 +18,29 @@ import '@ionic/react/css/display.css';
 import './theme/variables.css';
 import './theme/shared.css';
 
+import React, { Suspense, lazy, useEffect, useState } from 'react';
+import {
+  IonApp,
+  IonIcon,
+  IonLabel,
+  IonRouterOutlet,
+  IonTabBar,
+  IonTabButton,
+  IonTabs
+} from '@ionic/react';
+
+import { IonLoading } from '@ionic/react';
+
+import { IonReactRouter } from '@ionic/react-router';
+import { analytics, list, wallet } from 'ionicons/icons';
+
+import { Plugins, PluginResultError } from '@capacitor/core';
+
 import useAxiosCache from './hooks/use_axios_cache';
 import useXmlHttpRequestMonkeyPatch from './hooks/use_xml_http_request_monkey_patch';
 
-import { RecoilRoot, useRecoilValue } from 'recoil';
-import { Route, Redirect } from 'react-router-dom';
+import { RecoilRoot } from 'recoil';
+import { Route, useHistory } from 'react-router-dom';
 import ErrorBoundary from './components/error_boundary';
 
 const AccountsPage = lazy(() => import('./pages/accounts/index'));
@@ -47,17 +49,16 @@ const InsightsPage = lazy(() => import('./pages/insights/index'));
 const LoginPage = lazy(() => import('./pages/login/index'));
 const SetupPage = lazy(() => import('./pages/setup/index'));
 
-
 const Router: React.FC = () => (
   <IonReactRouter>
     <IonTabs>
       <IonRouterOutlet>
-        <Route path="/login" component={LoginPage} />
-        <Route path="/accounts" component={AccountsPage}  />
-        <Route path="/events" component={EventsPage}  />
-        <Route path="/insights" component={InsightsPage}  />
-        <Route path="/setup" component={SetupPage}  />
-        <Route path="/" component={LoginPage} />
+          <Route path="/login" component={LoginPage} />
+          <Route path="/accounts" component={AccountsPage}  />
+          <Route path="/events" component={EventsPage}  />
+          <Route path="/insights" component={InsightsPage}  />
+          <Route path="/setup" component={SetupPage}  />
+          <Route path="/" component={LoginPage} />
       </IonRouterOutlet>
       <IonTabBar slot="bottom">
         <IonTabButton tab="accounts" href="/accounts">
@@ -80,7 +81,7 @@ const Router: React.FC = () => (
 const App: React.FC = () => {
   useXmlHttpRequestMonkeyPatch();
   useAxiosCache();
-
+  /* useSessionGuard(); */
   return (
     <IonApp>
       <Suspense fallback={<IonLoading isOpen={true} message={'Please wait...'} />}>

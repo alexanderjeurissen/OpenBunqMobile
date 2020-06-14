@@ -9285,10 +9285,18 @@ react-error-overlay@^6.0.7:
   resolved "https://registry.yarnpkg.com/react-error-overlay/-/react-error-overlay-6.0.7.tgz#1dcfb459ab671d53f660a991513cb2f0a0553108"
   integrity sha512-TAv1KJFh3RhqxNvhzxj6LeT5NWklP6rDr2a0jaTfsZ5wSZWHOGeqQyejUp3xxLfPt2UpyJEcVQB/zyPcmonNFA==
 
-react-grid-primitive@^1.0.0:
+react-flex-primitive@^1.0.0:
   version "1.0.1"
-  resolved "https://registry.yarnpkg.com/react-grid-primitive/-/react-grid-primitive-1.0.1.tgz#d4d60424933354290ad979027982169623b463c0"
-  integrity sha512-alxBLLYw5HyoIc6oZdJxqAjAfwiiOBQpTQIWxOrxl8sxnOCYhMMK85J0pTmLg3uKm1WgNhupmlkpi3rEGayPbg==
+  resolved "https://registry.yarnpkg.com/react-flex-primitive/-/react-flex-primitive-1.0.1.tgz#e69ab08db24c45de95906d25dfd27f7e35b1f1a2"
+  integrity sha512-fxae+5on9Nm5BcEuwZSGCRx6PWOZ3CdGJM+lXdN7SOuRMbrvYjeXzTtpQqDCzM0nXNqdjHp/sxR2zKSMUoMhbQ==
+  dependencies:
+    styled-components "^5.1.1"
+    styled-system "^5.1.5"
+
+react-grid-primitive@^1.0.0:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/react-grid-primitive/-/react-grid-primitive-1.0.2.tgz#fa63897814f62fed87dd3f7b615c98a33acaea99"
+  integrity sha512-axdWfTplOLfnMMWzZha/Gt9cjzuqpcBk9GvjLdbbQsOCUOIreedkE9xDozUV+78SwGL057yB+VYD/3QMu/D+ZQ==
   dependencies:
     styled-components "^5.1.1"
     styled-system "^5.1.5"

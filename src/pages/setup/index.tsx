@@ -28,15 +28,14 @@ import { derivePassword }  from "../../helpers/encryption";
 
 import BunqErrorHandler from "../../helpers/bunq_error_handler";
 import ToggleTabBarVisibility from "../../helpers/tab_bar";
-import Flex from "../../components/flex";
+import Flex from "react-flex-primitive";
 
 import ObjType from '../../types/obj_type';
-import Storage from '../../helpers/capacitor_store';
 
 import CurrentUserIdState from '../../atoms/current_user_id_state';
 import BunqClient, { BunqClientInterface } from '../../atoms/bunq_client';
 import { useSetRecoilState, useRecoilValue, useRecoilState } from 'recoil';
-import useSecureStorageItem, { useSetSecureStorageItem } from '../../hooks/use_secure_storage_item';
+import useSecureStorageItem from '../../hooks/use_secure_storage_item';
 
 import './setup.css';
 
@@ -45,9 +44,10 @@ const SetupForm: React.FC = () => {
 
   const [ apiKey, setApiKey ] = useSecureStorageItem('BUNQ_API_KEY', '');
   const [ deviceName, setDeviceName ] = useSecureStorageItem('BUNQ_DEVICE_NAME', 'Open Bunq Mobile');
-  const setFaceIdEnabled = useSetSecureStorageItem('BUNQ_FACE_ID_ENABLED');
-  const [ password, setPassword ] = useState('');
+  const [ _, setFaceIdEnabled ] = useSecureStorageItem('BUNQ_FACE_ID_ENABLED', 'false');
+  const [ password, setPassword ] = useSecureStorageItem('BUNQ_PASSWORD', '');
   const [ showLoading, setShowLoading ] = useState(false);
+  const [ encryptionIV, setEncryptionIV ] = useSecureStorageItem('BUNQ_ENCRYPTION_IV', null);
   const setCurrentUserID = useSetRecoilState(CurrentUserIdState);
 
   let history = useHistory();
@@ -56,14 +56,12 @@ const SetupForm: React.FC = () => {
     // NOTE: try to fetch the encryption IV from secure storage.
     // If it does not exist, generate a new encryption key using a new IV
     // and the provided password
-    const encryptionIv = await Storage.get('BUNQ_ENCRYPTION_IV')
+    const derivedInfo = derivePassword(password as string, 32, (encryptionIV === null) ? false : encryptionIV);
 
-    const derivedInfo = derivePassword(password, 32, (encryptionIv === null) ? false : encryptionIv);
-
-    Storage.set('BUNQ_ENCRYPTION_IV', derivedInfo.iv)
+    setEncryptionIV(derivedInfo.iv)
 
     return derivedInfo.key;
-  }, [password]);
+  }, [password, encryptionIV]);
 
   const setupBunqClient = useCallback(async () => {
     setShowLoading(true);
@@ -72,7 +70,6 @@ const SetupForm: React.FC = () => {
       .run((apiKey as string), ['*'], 'PRODUCTION', await createOrRegenerateEncryptionKey())
       .catch((exception: any) => {
         BunqErrorHandler(exception)
-        throw exception;
       });
 
     // disable keep-alive since the server will stay online without the need for a constant active session
@@ -105,6 +102,7 @@ const SetupForm: React.FC = () => {
     const isAvailable = await FaceId.isAvailable();
 
     if(!isAvailable) {
+      console.log('Biometrics not available');
       setFaceIdEnabled('false');
       return
     }
@@ -113,11 +111,11 @@ const SetupForm: React.FC = () => {
     FaceId.auth().then((event: any, nice: any) => {
       console.log('authenticated');
       setFaceIdEnabled('true');
-      Storage.set('BUNQ_PASSWORD', password)
     }).catch((error: PluginResultError) => {
       // handle rejection errors
       console.error(error.message);
       setFaceIdEnabled('false')
+      setPassword('')
     });
   }
 
@@ -151,7 +149,7 @@ const SetupForm: React.FC = () => {
             name='password'
             type='password'
             onIonChange={e => setPassword((e.target as HTMLInputElement).value)}
-            value={password}
+            value={password as string}
             required
           />
         </IonItem>
@@ -177,8 +175,8 @@ const SetupPage: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent slot="fixed" fullscreen scroll-y="false">
-        <Flex minHeight='100vh' justifyContent="center" alignItems="flex-start" flexGrow={1}>
-          <IonCard slot="fixed" style={{width: '100vw' }}>
+        <Flex minHeight='100vh' justifyContent="center" alignItems="center" flexGrow={1}>
+          <IonCard style={{width: '100vw' }}>
             <Suspense fallback={<IonLoading isOpen={true} message={'Please wait...'} />}>
               <SetupForm />
             </Suspense>

@@ -10,7 +10,6 @@ import {
 
 import { IonList } from '@ionic/react';
 import { IonLoading } from '@ionic/react';
-import { IonSegment, IonSegmentButton, IonButton, IonLabel } from '@ionic/react';
 import { IonSearchbar } from '@ionic/react';
 import { IonRefresher, IonRefresherContent } from '@ionic/react';
 import { RefresherEventDetail } from '@ionic/core';
@@ -18,7 +17,6 @@ import { RefresherEventDetail } from '@ionic/core';
 import ErrorBoundary from '../../components/error_boundary';
 
 import './accounts.css';
-
 
 import MonetaryAccountsFilterState from '../../atoms/monetary_accounts_filter_state';
 import MonetaryAccountsQuery from '../../selectors/monetary_accounts_query';
@@ -44,7 +42,6 @@ const AccountsPage: React.FC = () => {
   const resetMonetaryAccountState = useResetRecoilState(MonetaryAccountsQuery);
   const [ filterState, setFilterState ] = useRecoilState(MonetaryAccountsFilterState);
 
-  const segments = [{ value: 'ACTIVE', label: 'Active'}, { value: 'CANCELLED', label: 'inactive' }];
   const [searchFocus, setSearchFocus] = useState(false);
 
   const refreshAccounts = async (event: CustomEvent<RefresherEventDetail>) => {
@@ -56,7 +53,7 @@ const AccountsPage: React.FC = () => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Events</IonTitle>
+          <IonTitle>Accounts</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent start-y="55" fullscreen force-overscroll={true}>
@@ -70,15 +67,6 @@ const AccountsPage: React.FC = () => {
               onFocus={e => setSearchFocus(true)}
               onIonChange={e => console.log(e.detail.value!)}
             />
-          </IonToolbar>
-          <IonToolbar>
-            <IonSegment value={filterState.status} onIonChange={e => setFilterState({...filterState, status: e.detail.value || 'ACTIVE' })}>
-              { segments.map(({ value, label}) => (
-              <IonSegmentButton value={value}>
-                <IonLabel>{label}</IonLabel>
-              </IonSegmentButton>
-              ))}
-            </IonSegment>
           </IonToolbar>
         </IonHeader>
         <IonRefresher slot="fixed" onIonRefresh={refreshAccounts} pullFactor={0.5} pullMin={100} pullMax={200}>

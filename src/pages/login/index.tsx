@@ -12,7 +12,7 @@ import { IonLoading } from '@ionic/react';
 
 import { Plugins, PluginResultError } from '@capacitor/core';
 
-import Flex from "../../components/flex";
+import Flex from "react-flex-primitive";
 
 import BunqErrorHandler from "../../helpers/bunq_error_handler";
 import { derivePassword }  from "../../helpers/encryption";
@@ -36,6 +36,7 @@ const LoginPage: React.FC = () => {
   const [ deviceName ] = useSecureStorageItem('BUNQ_DEVICE_NAME', 'Open Bunq Mobile');
   const [ faceIdEnabled, setFaceIdEnabled ] = useSecureStorageItem('BUNQ_FACE_ID_ENABLED', 'false');
   const [ password, setPassword ] = useSecureStorageItem('BUNQ_PASSWORD', '');
+  const [ encryptionIV, setEncryptionIV ] = useSecureStorageItem('BUNQ_ENCRYPTION_IV', null);
   const [ showLoading, setShowLoading ] = useState(true);
   const setCurrentUserID = useSetRecoilState(CurrentUserIdState);
 
@@ -50,12 +51,10 @@ const LoginPage: React.FC = () => {
     // NOTE: try to fetch the encryption IV from secure storage.
     // If it does not exist, generate a new encryption key using a new IV
     // and the provided password
-    const encryptionIv = await Storage.get('BUNQ_ENCRYPTION_IV')
-
-    const derivedInfo = derivePassword(password as string, 32, (encryptionIv === null) ? false : encryptionIv);
+    const derivedInfo = derivePassword(password as string, 32, (encryptionIV === null) ? false : encryptionIV);
 
     return derivedInfo.key;
-  }, [password]);
+  }, [password, encryptionIV]);
 
   const initializeBunqClient = useCallback(async () => {
     setShowLoading(true);
@@ -64,7 +63,6 @@ const LoginPage: React.FC = () => {
       .run((apiKey as string), ['*'], 'PRODUCTION', await regenerateEncryptionKey())
       .catch((exception: any) => {
         BunqErrorHandler(exception)
-        throw exception;
       });
 
     // disable keep-alive since the server will stay online without the need for a constant active session
@@ -86,7 +84,7 @@ const LoginPage: React.FC = () => {
     ToggleTabBarVisibility();
     history.push('/accounts');
     setShowLoading(false);
-  }, [BunqClient, regenerateEncryptionKey, apiKey, deviceName, history, setCurrentUserID])
+  }, [ BunqClient, regenerateEncryptionKey, apiKey, deviceName, history ])
 
   const unlockWithFaceId = async () => {
     const { FaceId } = Plugins;
@@ -95,9 +93,8 @@ const LoginPage: React.FC = () => {
     const isAvailable = await FaceId.isAvailable();
 
     if(!isAvailable) {
-      setPassword('');
       setFaceIdEnabled('false')
-      setTimeout(unlockWithFaceId, 500);
+      history.push('/setup');
       return
     }
 
@@ -117,7 +114,8 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     const login = async () => {
-      if(apiKey !== '' && password !== '' && faceIdEnabled === 'true') {
+      /* throw new Error(`apiKey: ${apiKey}, password: ${password} faceIdEnabled: ${faceIdEnabled}`) */
+      if(apiKey && password && faceIdEnabled === 'true') {
         await unlockWithFaceId();
       } else {
         setShowLoading(false);
@@ -126,14 +124,10 @@ const LoginPage: React.FC = () => {
     }
 
     login();
-  }, [apiKey, faceIdEnabled, password])
+  }, [])
 
   return (
     <IonPage className='login-page'>
-      <IonHeader>
-        <IonToolbar>
-        </IonToolbar>
-      </IonHeader>
       <IonContent slot="fixed" fullscreen scroll-y="false">
         <Flex minHeight='100vh' justifyContent="center" alignItems="flex-start" flexGrow={1}>
           <IonLoading isOpen={showLoading} message={'Looking for existing credentials...'} />

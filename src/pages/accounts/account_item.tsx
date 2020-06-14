@@ -1,5 +1,5 @@
 import React from 'react';
-import Flex from "../../components/flex";
+import Flex from "react-flex-primitive";
 
 import { IonIcon } from '@ionic/react';
 // NOTE: account icons

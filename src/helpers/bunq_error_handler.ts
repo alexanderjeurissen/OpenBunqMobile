@@ -30,13 +30,15 @@ export default (error: any, customError = false) => {
     // check if a network error occured
     if (error.toString() === "Error: Network Error") {
         Logger.error(offlineError);
+        throw offlineError;
     }
 
     if (error.errorCode) {
         switch (error.errorCode) {
             // invalid response or it couldn't be verified
             case ErrorCodes.INVALID_RESPONSE_RECEIVED:
-                return Logger.error(invalidResponseError);
+                Logger.error(invalidResponseError)
+                throw invalidResponseError
         }
     }
 
@@ -73,7 +75,8 @@ export default (error: any, customError = false) => {
                     break;
             }
 
-            return Logger.error(`${message}:\n ${errorMessage}${responseIdText}`);
+            Logger.error(`${message}:\n ${errorMessage}${responseIdText}`);
+            throw new Error(`${message}:\n ${errorMessage}${responseIdText}`)
         }
     }
 
